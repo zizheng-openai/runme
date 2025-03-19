@@ -55,6 +55,9 @@ const (
 	RunnerServiceMonitorEnvStoreProcedure = "/runme.runner.v2.RunnerService/MonitorEnvStore"
 	// RunnerServiceExecuteProcedure is the fully-qualified name of the RunnerService's Execute RPC.
 	RunnerServiceExecuteProcedure = "/runme.runner.v2.RunnerService/Execute"
+	// RunnerServiceExecuteOneShotProcedure is the fully-qualified name of the RunnerService's
+	// ExecuteOneShot RPC.
+	RunnerServiceExecuteOneShotProcedure = "/runme.runner.v2.RunnerService/ExecuteOneShot"
 	// RunnerServiceResolveProgramProcedure is the fully-qualified name of the RunnerService's
 	// ResolveProgram RPC.
 	RunnerServiceResolveProgramProcedure = "/runme.runner.v2.RunnerService/ResolveProgram"
@@ -76,6 +79,12 @@ type RunnerServiceClient interface {
 	// Subsequent "ExecuteRequest" should only contain "input_data" as
 	// other fields will be ignored.
 	Execute(context.Context) *connect.BidiStreamForClient[v2.ExecuteRequest, v2.ExecuteResponse]
+	// Execute executes a program in OneShot. Examine "ExecuteRequest" to explore
+	// configuration options.
+	//
+	// Client sends a single message containing the program to execute. Server
+	// streams back the output of the program.
+	ExecuteOneShot(context.Context, *connect.Request[v2.ExecuteOneShotRequest]) (*connect.ServerStreamForClient[v2.ExecuteOneShotResponse], error)
 	// ResolveProgram resolves variables from a script or a list of commands
 	// using the provided sources, which can be a list of environment variables,
 	// a session, or a project.
@@ -136,6 +145,12 @@ func NewRunnerServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 			connect.WithSchema(runnerServiceMethods.ByName("Execute")),
 			connect.WithClientOptions(opts...),
 		),
+		executeOneShot: connect.NewClient[v2.ExecuteOneShotRequest, v2.ExecuteOneShotResponse](
+			httpClient,
+			baseURL+RunnerServiceExecuteOneShotProcedure,
+			connect.WithSchema(runnerServiceMethods.ByName("ExecuteOneShot")),
+			connect.WithClientOptions(opts...),
+		),
 		resolveProgram: connect.NewClient[v2.ResolveProgramRequest, v2.ResolveProgramResponse](
 			httpClient,
 			baseURL+RunnerServiceResolveProgramProcedure,
@@ -154,6 +169,7 @@ type runnerServiceClient struct {
 	deleteSession   *connect.Client[v2.DeleteSessionRequest, v2.DeleteSessionResponse]
 	monitorEnvStore *connect.Client[v2.MonitorEnvStoreRequest, v2.MonitorEnvStoreResponse]
 	execute         *connect.Client[v2.ExecuteRequest, v2.ExecuteResponse]
+	executeOneShot  *connect.Client[v2.ExecuteOneShotRequest, v2.ExecuteOneShotResponse]
 	resolveProgram  *connect.Client[v2.ResolveProgramRequest, v2.ResolveProgramResponse]
 }
 
@@ -192,6 +208,11 @@ func (c *runnerServiceClient) Execute(ctx context.Context) *connect.BidiStreamFo
 	return c.execute.CallBidiStream(ctx)
 }
 
+// ExecuteOneShot calls runme.runner.v2.RunnerService.ExecuteOneShot.
+func (c *runnerServiceClient) ExecuteOneShot(ctx context.Context, req *connect.Request[v2.ExecuteOneShotRequest]) (*connect.ServerStreamForClient[v2.ExecuteOneShotResponse], error) {
+	return c.executeOneShot.CallServerStream(ctx, req)
+}
+
 // ResolveProgram calls runme.runner.v2.RunnerService.ResolveProgram.
 func (c *runnerServiceClient) ResolveProgram(ctx context.Context, req *connect.Request[v2.ResolveProgramRequest]) (*connect.Response[v2.ResolveProgramResponse], error) {
 	return c.resolveProgram.CallUnary(ctx, req)
@@ -213,6 +234,12 @@ type RunnerServiceHandler interface {
 	// Subsequent "ExecuteRequest" should only contain "input_data" as
 	// other fields will be ignored.
 	Execute(context.Context, *connect.BidiStream[v2.ExecuteRequest, v2.ExecuteResponse]) error
+	// Execute executes a program in OneShot. Examine "ExecuteRequest" to explore
+	// configuration options.
+	//
+	// Client sends a single message containing the program to execute. Server
+	// streams back the output of the program.
+	ExecuteOneShot(context.Context, *connect.Request[v2.ExecuteOneShotRequest], *connect.ServerStream[v2.ExecuteOneShotResponse]) error
 	// ResolveProgram resolves variables from a script or a list of commands
 	// using the provided sources, which can be a list of environment variables,
 	// a session, or a project.
@@ -269,6 +296,12 @@ func NewRunnerServiceHandler(svc RunnerServiceHandler, opts ...connect.HandlerOp
 		connect.WithSchema(runnerServiceMethods.ByName("Execute")),
 		connect.WithHandlerOptions(opts...),
 	)
+	runnerServiceExecuteOneShotHandler := connect.NewServerStreamHandler(
+		RunnerServiceExecuteOneShotProcedure,
+		svc.ExecuteOneShot,
+		connect.WithSchema(runnerServiceMethods.ByName("ExecuteOneShot")),
+		connect.WithHandlerOptions(opts...),
+	)
 	runnerServiceResolveProgramHandler := connect.NewUnaryHandler(
 		RunnerServiceResolveProgramProcedure,
 		svc.ResolveProgram,
@@ -291,6 +324,8 @@ func NewRunnerServiceHandler(svc RunnerServiceHandler, opts ...connect.HandlerOp
 			runnerServiceMonitorEnvStoreHandler.ServeHTTP(w, r)
 		case RunnerServiceExecuteProcedure:
 			runnerServiceExecuteHandler.ServeHTTP(w, r)
+		case RunnerServiceExecuteOneShotProcedure:
+			runnerServiceExecuteOneShotHandler.ServeHTTP(w, r)
 		case RunnerServiceResolveProgramProcedure:
 			runnerServiceResolveProgramHandler.ServeHTTP(w, r)
 		default:
@@ -328,6 +363,10 @@ func (UnimplementedRunnerServiceHandler) MonitorEnvStore(context.Context, *conne
 
 func (UnimplementedRunnerServiceHandler) Execute(context.Context, *connect.BidiStream[v2.ExecuteRequest, v2.ExecuteResponse]) error {
 	return connect.NewError(connect.CodeUnimplemented, errors.New("runme.runner.v2.RunnerService.Execute is not implemented"))
+}
+
+func (UnimplementedRunnerServiceHandler) ExecuteOneShot(context.Context, *connect.Request[v2.ExecuteOneShotRequest], *connect.ServerStream[v2.ExecuteOneShotResponse]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("runme.runner.v2.RunnerService.ExecuteOneShot is not implemented"))
 }
 
 func (UnimplementedRunnerServiceHandler) ResolveProgram(context.Context, *connect.Request[v2.ResolveProgramRequest]) (*connect.Response[v2.ResolveProgramResponse], error) {

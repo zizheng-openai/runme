@@ -1,12 +1,15 @@
 package command
 
 import (
-	"github.com/stateful/runme/v3/internal/command"
 	"go.uber.org/zap"
+
+	"github.com/stateful/runme/v3/internal/command"
 )
 
-type FactoryOption command.FactoryOption
-type Factory command.Factory
+type (
+	FactoryOption command.FactoryOption
+	Factory       command.Factory
+)
 
 func WithDebug() FactoryOption {
 	return FactoryOption(command.WithDebug())
