@@ -16,6 +16,12 @@ plugins:
     out: pkg/api/gen/proto/ts
     opt: output_javascript,optimize_code_size,long_type_string,add_pb_suffix,ts_nocheck,eslint_disable
 
+  # https://buf.build/bufbuild/es?version=v2.2.3
+  - remote: buf.build/bufbuild/es:v2.2.3
+    out: pkg/api/gen/proto/es
+    opt: target=js+dts,import_extension=none,json_types=true
+    include_imports: true
+
   # Local plugin to generate GQL schema
   - local: protoc-gen-gql
     out: pkg/api/gen/proto/gql
