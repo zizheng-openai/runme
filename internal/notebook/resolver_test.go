@@ -269,7 +269,7 @@ func TestResolveDaggerShell_FrontmatterWithVanillaCells(t *testing.T) {
 }
 
 func TestResolveDaggerShell_Source(t *testing.T) {
-	simpleSource := "---\nshell: dagger shell\n---\n\n```sh {\"name\":\"simple_dagger\",\"terminalRows\":\"18\"}\n### Exported in runme.dev as simple_dagger\ngit github.com/runmedev/runme |\n    head |\n    tree |\n    file examples/README.md\n```\n"
+	simpleSource := "---\nshell: dagger shell\n---\n\n```sh {\"name\":\"SimpleDagger\",\"terminalRows\":\"18\"}\n### Exported in runme.dev as SimpleDagger\ngit github.com/runmedev/runme |\n    head |\n    tree |\n    file examples/README.md\n```\n"
 
 	resolver, err := NewResolver(WithSource([]byte(simpleSource)))
 	require.NoError(t, err)
@@ -277,7 +277,7 @@ func TestResolveDaggerShell_Source(t *testing.T) {
 	script, err := resolver.ResolveDaggerShell(context.Background(), uint32(0))
 	require.NoError(t, err)
 
-	assert.Equal(t, "simple_dagger()\n{\n  git github.com/runmedev/runme \\\n    | head \\\n    | tree \\\n    | file examples/README.md\n}\nsimple_dagger\n", script)
+	assert.Equal(t, "SimpleDagger()\n{\n  git github.com/runmedev/runme \\\n    | head \\\n    | tree \\\n    | file examples/README.md\n}\nsimple_dagger\n", script)
 }
 
 func TestResolveDaggerShell_EmptyRunmeMetadata(t *testing.T) {

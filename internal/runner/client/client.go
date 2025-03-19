@@ -356,8 +356,8 @@ func prepareCommandSeq(script string, language string) string {
 
 	lines := strings.Split(script, "\n")
 	for i, line := range lines {
-		if strings.HasPrefix(line, "$") {
-			lines[i] = strings.TrimLeft(line[1:], " ")
+		if strings.HasPrefix(line, "$ ") {
+			lines[i] = line[2:]
 		}
 	}
 

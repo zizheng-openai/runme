@@ -207,6 +207,9 @@ func (r *RemoteRunner) RunTask(ctx context.Context, task project.Task) error {
 	if fmtr != nil && fmtr.Shell != "" {
 		customShell = fmtr.Shell
 	}
+	if interpreter := block.Interpreter(); interpreter != "" {
+		customShell = interpreter
+	}
 
 	programName, lines, commandMode, err := getCellProgram(block.Language(), customShell, task)
 	if err != nil {

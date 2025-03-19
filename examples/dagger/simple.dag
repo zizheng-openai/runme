@@ -2,8 +2,8 @@
 shell: dagger shell
 ---
 
-```sh {"name":"simple_dagger","terminalRows":"18"}
-### Exported in runme.dev as simple_dagger
+```sh {"name":"SimpleDagger","terminalRows":"18"}
+### Exported in runme.dev as SimpleDagger
 git github.com/runmedev/runme |
     head |
     tree |

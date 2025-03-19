@@ -7,31 +7,65 @@ exec runme ls --json
 cmp stdout golden-list-json.txt
 ! stderr .
 
-exec runme run simple_dagger
+exec runme run SimpleDagger
 stdout 'sha256:[0-9a-f]{64}'
+
+exec runme run WithDagger
+stdout 'sha256:[0-9a-f]{64}'
+
+exec runme run WithoutDagger
+stdout 'No Dagger Shell here'
 
 -- shell.dag --
 ---
 shell: dagger shell
 ---
 
-```sh {"name":"simple_dagger","terminalRows":"18","interactive":"false"}
-### Exported in runme.dev as simple_dagger
+```sh {"name":"SimpleDagger","interactive":"false"}
+### Exported in runme.dev as SimpleDagger
 git github.com/runmedev/runme |
     head |
     tree |
     file examples/README.md | digest
 ```
 
+-- mixed.dag --
+```sh {"name":"WithoutDagger","interactive":"false"}
+echo "No Dagger Shell here"
+```
+
+```sh {"name":"WithDagger","interactive":"false","interpreter":"dagger shell"}
+### Exported in runme.dev as WithDagger
+git github.com/runmedev/runme | head | tree | file examples/README.md | digest
+```
+
 -- golden-list.txt --
 NAME	FILE	FIRST COMMAND	DESCRIPTION	NAMED
-simple_dagger*	shell.dag	git github.com/runmedev/runme |		Yes
+WithoutDagger*	mixed.dag	echo "No Dagger Shell here"		Yes
+WithDagger*	mixed.dag	git github.com/runmedev/runme | head | tree | file examples/README.md | digest		Yes
+SimpleDagger*	shell.dag	git github.com/runmedev/runme |		Yes
 -- golden-list-allow-unnamed.txt --
 NAME	FILE	FIRST COMMAND	DESCRIPTION	NAMED
 -- golden-list-json.txt --
 [
   {
-    "name": "simple_dagger",
+    "name": "WithoutDagger",
+    "file": "mixed.dag",
+    "first_command": "echo \"No Dagger Shell here\"",
+    "description": "",
+    "named": true,
+    "run_all": true
+  },
+  {
+    "name": "WithDagger",
+    "file": "mixed.dag",
+    "first_command": "git github.com/runmedev/runme | head | tree | file examples/README.md | digest",
+    "description": "",
+    "named": true,
+    "run_all": true
+  },
+  {
+    "name": "SimpleDagger",
     "file": "shell.dag",
     "first_command": "git github.com/runmedev/runme |",
     "description": "",

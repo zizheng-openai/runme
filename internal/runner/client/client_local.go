@@ -103,6 +103,9 @@ func (r *LocalRunner) newExecutable(task project.Task) (runner.Executable, error
 	if fmtr != nil && fmtr.Shell != "" {
 		customShell = fmtr.Shell
 	}
+	if interpreter := block.Interpreter(); interpreter != "" {
+		customShell = interpreter
+	}
 
 	programName, lines, _, err := getCellProgram(block.Language(), customShell, task)
 	if err != nil {
