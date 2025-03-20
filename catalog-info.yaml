@@ -5,10 +5,8 @@ metadata:
   namespace: stateful
   description: Runme CLI
   annotations:
-    github.com/project-slug: stateful/runme
+    github.com/project-slug: runmedev/runme
 spec:
   type: service
-  owner: user:stateful/sourishkrout
+  owner: user:runmedev/sourishkrout
   lifecycle: production
-  dependsOn:
-    - component:stateful/firefly
