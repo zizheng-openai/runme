@@ -277,7 +277,7 @@ func TestResolveDaggerShell_Source(t *testing.T) {
 	script, err := resolver.ResolveDaggerShell(context.Background(), uint32(0))
 	require.NoError(t, err)
 
-	assert.Equal(t, "SimpleDagger()\n{\n  git github.com/runmedev/runme \\\n    | head \\\n    | tree \\\n    | file examples/README.md\n}\nsimple_dagger\n", script)
+	assert.Equal(t, "SimpleDagger()\n{\n  git github.com/runmedev/runme \\\n    | head \\\n    | tree \\\n    | file examples/README.md\n}\nSimpleDagger\n", script)
 }
 
 func TestResolveDaggerShell_EmptyRunmeMetadata(t *testing.T) {
