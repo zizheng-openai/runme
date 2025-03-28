@@ -7,10 +7,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/stateful/runme/v3/internal/command"
 	"github.com/stateful/runme/v3/internal/lru"
 	"github.com/stateful/runme/v3/internal/session"
 	runnerv2 "github.com/stateful/runme/v3/pkg/api/gen/proto/go/runme/runner/v2"
+	"github.com/stateful/runme/v3/pkg/command"
 	"github.com/stateful/runme/v3/pkg/project"
 )
 

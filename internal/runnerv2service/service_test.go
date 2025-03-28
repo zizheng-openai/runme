@@ -1,6 +1,6 @@
 package runnerv2service
 
-import "github.com/stateful/runme/v3/internal/command"
+import "github.com/stateful/runme/v3/pkg/command"
 
 func init() {
 	// SetEnvDumpCommandForTesting overrides the default command that dumps the environment variables.

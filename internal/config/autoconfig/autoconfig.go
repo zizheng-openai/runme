@@ -21,7 +21,6 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 
-	"github.com/stateful/runme/v3/internal/command"
 	"github.com/stateful/runme/v3/internal/config"
 	"github.com/stateful/runme/v3/internal/dockerexec"
 	"github.com/stateful/runme/v3/internal/project/projectservice"
@@ -32,6 +31,7 @@ import (
 	parserv1 "github.com/stateful/runme/v3/pkg/api/gen/proto/go/runme/parser/v1"
 	projectv1 "github.com/stateful/runme/v3/pkg/api/gen/proto/go/runme/project/v1"
 	runnerv2 "github.com/stateful/runme/v3/pkg/api/gen/proto/go/runme/runner/v2"
+	"github.com/stateful/runme/v3/pkg/command"
 	"github.com/stateful/runme/v3/pkg/document/editor/editorservice"
 	"github.com/stateful/runme/v3/pkg/project"
 )

@@ -10,12 +10,12 @@ import (
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 
-	"github.com/stateful/runme/v3/internal/command"
 	"github.com/stateful/runme/v3/internal/config/autoconfig"
 	rcontext "github.com/stateful/runme/v3/internal/runner/context"
 	"github.com/stateful/runme/v3/internal/runnerv2client"
 	"github.com/stateful/runme/v3/internal/session"
 	runnerv2 "github.com/stateful/runme/v3/pkg/api/gen/proto/go/runme/runner/v2"
+	"github.com/stateful/runme/v3/pkg/command"
 	"github.com/stateful/runme/v3/pkg/document"
 	"github.com/stateful/runme/v3/pkg/project"
 )

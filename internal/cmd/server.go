@@ -13,7 +13,6 @@ import (
 	healthgrpc "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
 
-	"github.com/stateful/runme/v3/internal/command"
 	notebookservice "github.com/stateful/runme/v3/internal/notebook"
 	"github.com/stateful/runme/v3/internal/project/projectservice"
 	"github.com/stateful/runme/v3/internal/runner"
@@ -25,6 +24,7 @@ import (
 	projectv1 "github.com/stateful/runme/v3/pkg/api/gen/proto/go/runme/project/v1"
 	runnerv1 "github.com/stateful/runme/v3/pkg/api/gen/proto/go/runme/runner/v1"
 	runnerv2 "github.com/stateful/runme/v3/pkg/api/gen/proto/go/runme/runner/v2"
+	"github.com/stateful/runme/v3/pkg/command"
 	"github.com/stateful/runme/v3/pkg/document/editor/editorservice"
 )
 
