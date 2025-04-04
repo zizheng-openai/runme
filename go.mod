@@ -1,4 +1,4 @@
-module github.com/stateful/runme/v3
+module github.com/runmedev/runme/v3
 
 go 1.23.1
 
@@ -131,7 +131,7 @@ require (
 	github.com/briandowns/spinner v1.23.2 // indirect
 	github.com/cli/go-gh v1.2.1
 	github.com/cli/safeexec v1.0.1 // indirect
-	github.com/cloudflare/circl v1.6.0 // indirect
+	github.com/cloudflare/circl v1.3.7 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect

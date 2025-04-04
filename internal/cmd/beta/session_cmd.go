@@ -12,9 +12,9 @@ import (
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 
-	"github.com/stateful/runme/v3/internal/config/autoconfig"
-	runnerv2 "github.com/stateful/runme/v3/pkg/api/gen/proto/go/runme/runner/v2"
-	"github.com/stateful/runme/v3/pkg/command"
+	"github.com/runmedev/runme/v3/internal/config/autoconfig"
+	runnerv2 "github.com/runmedev/runme/v3/pkg/api/gen/proto/go/runme/runner/v2"
+	"github.com/runmedev/runme/v3/pkg/command"
 )
 
 func sessionCmd(*commonFlags) *cobra.Command {
