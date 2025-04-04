@@ -6,11 +6,11 @@ GIT_SHA_SHORT := $(shell git rev-parse --short HEAD)
 DATE := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 VERSION := $(shell git describe --tags)-$(GIT_SHA_SHORT)
 LDFLAGS := -s -w \
-	-X 'github.com/stateful/runme/v3/internal/version.BuildDate=$(DATE)' \
-	-X 'github.com/stateful/runme/v3/internal/version.BuildVersion=$(subst v,,$(VERSION))' \
-	-X 'github.com/stateful/runme/v3/internal/version.Commit=$(GIT_SHA)'
+	-X 'github.com/runmedev/runme/v3/internal/version.BuildDate=$(DATE)' \
+	-X 'github.com/runmedev/runme/v3/internal/version.BuildVersion=$(subst v,,$(VERSION))' \
+	-X 'github.com/runmedev/runme/v3/internal/version.Commit=$(GIT_SHA)'
 
-LDTESTFLAGS := -X 'github.com/stateful/runme/v3/internal/version.BuildVersion=$(subst v,,$(VERSION))'
+LDTESTFLAGS := -X 'github.com/runmedev/runme/v3/internal/version.BuildVersion=$(subst v,,$(VERSION))'
 
 ifeq ($(RUNME_EXT_BASE),)
 RUNME_EXT_BASE := "../vscode-runme"
@@ -93,14 +93,14 @@ test/coverage/func:
 install/dev:
 	@# Most of the tools got moved to go.mod, but this is used in buf.gen.yaml.
 	@# Remove when buf starts respecting binaries from provided by "go tool".
-	go install github.com/stateful/go-proto-gql/protoc-gen-gql@latest
+	go install github.com/runmedev/go-proto-gql/protoc-gen-gql@latest
 	@# Does not work with "go tool".
 	go install gvisor.dev/gvisor/tools/checklocks/cmd/checklocks@go
 
 .PHONY: fmt
 fmt:
 	@go tool gofumpt -w .
-	@go tool goimports -local="github.com/stateful/runme" -w -l .
+	@go tool goimports -local="github.com/runmedev/runme" -w -l .
 
 .PHONY: generate
 generate: _generate fmt
@@ -114,7 +114,7 @@ lint:
 	@# "gofumpt -d ." does not return non-zero exit code if there are changes
 	test -z $(shell go tool gofumpt -d .)
 	@# "goimports -d ." does not return non-zero exit code if there are changes
-	test -z $(shell go tool goimports -local="github.com/stateful/runme" -l .)
+	test -z $(shell go tool goimports -local="github.com/runmedev/runme" -l .)
 	go tool revive \
 		-config revive.toml \
 		-formatter friendly \

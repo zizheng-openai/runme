@@ -12,7 +12,7 @@ import (
 
 	connect "connectrpc.com/connect"
 
-	v2 "github.com/stateful/runme/v3/pkg/api/gen/proto/go/runme/runner/v2"
+	v2 "github.com/runmedev/runme/v3/pkg/api/gen/proto/go/runme/runner/v2"
 )
 
 // This is a compile-time assertion to ensure that this generated file and the connect package are
