@@ -69,3 +69,13 @@ Export it to local file.
 ```sh
 BuildBinary | export /tmp/runme-binary
 ```
+
+## Releases
+
+```sh
+. | release | entries
+```
+
+```sh
+. | release-files linux/arm64 | entries
+```

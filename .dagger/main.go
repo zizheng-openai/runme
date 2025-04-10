@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"dagger/runme/internal/dagger"
+
+	"github.com/google/go-github/v71/github"
 )
 
 // A Dagger module for Runme
@@ -128,4 +130,90 @@ func (m *Runme) Test(
 		WithEnvVariable("RUNME_TEST_ENV", "docker").
 		WithEnvVariable("PKGS", pkgs).
 		WithExec([]string{"make", "test"})
+}
+
+// Release fetches a Runme release from GitHub and returns a directory with the release assets.
+func (m *Runme) Release(ctx context.Context,
+	// GithubToken is an optional authentication token for GitHub API access
+	// +optional
+	githubToken *dagger.Secret,
+	// Version specifies the release version to fetch, defaults to "latest"
+	// +optional
+	// +default="latest"
+	version string,
+) *dagger.Directory {
+	client := github.NewClient(nil)
+	if githubToken != nil {
+		plaintext, err := githubToken.Plaintext(ctx)
+		if err == nil {
+			client = github.NewClient(nil).WithAuthToken(plaintext)
+		}
+	}
+
+	var release *github.RepositoryRelease
+	var err error
+
+	switch version {
+	case "latest":
+		release, _, err = client.Repositories.GetLatestRelease(ctx, "runmedev", "runme")
+	default:
+		release, _, err = client.Repositories.GetReleaseByTag(ctx, "runmedev", "runme", version)
+	}
+
+	if err != nil {
+		panic(fmt.Sprintf("Failed to get release: %v", err))
+	}
+
+	ctr := m.Container(ctx)
+	releaseDir := "/releases/" + version
+
+	for _, asset := range release.Assets {
+		if !strings.HasSuffix(asset.GetName(), ".tar.gz") {
+			continue
+		}
+		ctr = ctr.WithFile(releaseDir+"/"+asset.GetName(), dag.HTTP(asset.GetBrowserDownloadURL()))
+	}
+
+	return ctr.Directory(releaseDir)
+}
+
+// ReleaseFiles fetches a Runme release from GitHub and returns a directory with the uncompressed release files.
+func (m *Runme) ReleaseFiles(ctx context.Context,
+	// Platform specifies the target OS and architecture in the format "os/arch"
+	// e.g. "linux/amd64"
+	platform dagger.Platform,
+	// GithubToken is an optional authentication token for GitHub API access
+	// +optional
+	githubToken *dagger.Secret,
+	// Version specifies the release version to fetch, defaults to "latest"
+	// +optional
+	// +default="latest"
+	version string,
+) *dagger.Directory {
+	parts := strings.Split(string(platform), "/")
+	os := parts[0]
+	arch := parts[1]
+
+	// Map architecture names to match release file naming
+	archMap := map[string]string{
+		"amd64": "x86_64",
+		"arm64": "arm64",
+		"wasm":  "wasm",
+	}
+
+	archName := arch
+	if mapped, ok := archMap[arch]; ok {
+		archName = mapped
+	}
+
+	filename := fmt.Sprintf("runme_%s_%s.tar.gz", os, archName)
+	release := m.Release(ctx, githubToken, version)
+
+	ctr := m.Container(ctx).
+		WithFile("/tmp/release/runme.tar.gz", release.File(filename)).
+		WithWorkdir("/tmp/release").
+		WithExec([]string{"tar", "-xzf", "runme.tar.gz"})
+
+	return ctr.Directory("/tmp/release").
+		WithoutFile("runme.tar.gz")
 }
