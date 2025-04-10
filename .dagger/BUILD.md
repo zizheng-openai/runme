@@ -13,6 +13,8 @@ direnv allow
 echo "Target platform: $TARGET_PLATFORM"
 ```
 
+If `TARGET_PLATFORM` is not set, reset your Runme session. It's likely because direnv wasn't authorized yet.
+
 ```sh {"name":"BuildEnv"}
 ### Exported in runme.dev as BuildEnv
 . --target-platform $TARGET_PLATFORM
@@ -21,7 +23,7 @@ echo "Target platform: $TARGET_PLATFORM"
 Check out what the module has to offer.
 
 ```sh
-$BuildEnv | .help
+BuildEnv | .help
 ```
 
 ## Local builds
@@ -29,7 +31,7 @@ $BuildEnv | .help
 Create a build from the local source directory.
 
 ```sh
-$BuildEnv |
+BuildEnv |
     with-source . |
     build
 ```
@@ -37,7 +39,7 @@ $BuildEnv |
 Run the tests.
 
 ```sh
-$BuildEnv |
+BuildEnv |
     with-source . |
     test |
     stdout
@@ -48,7 +50,7 @@ $BuildEnv |
 Testing latest `main` branch.
 
 ```sh
-$BuildEnv |
+BuildEnv |
     # test --pkgs "github.com/runmedev/runme/v3/pkg/document/editor/editorservice" |
     test |
     stdout
@@ -58,12 +60,12 @@ Build the binary.
 
 ```sh {"name":"BuildBinary"}
 ### Exported in runme.dev as BuildBinary
-$BuildEnv |
+BuildEnv |
     binary
 ```
 
 Export it to local file.
 
 ```sh
-$BuildBinary | export /tmp/runme-binary
+BuildBinary | export /tmp/runme-binary
 ```
