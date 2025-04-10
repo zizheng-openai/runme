@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"dagger/runme/internal/dagger"
@@ -14,8 +15,6 @@ type Runme struct {
 	// GhcrToken is the GitHub Container Registry token for authentication
 	GhcrToken *dagger.Secret
 
-	// ContainerPlatform specifies the target platform for container builds
-	ContainerPlatform dagger.Platform
 	// Source is the local source directory for building Runme
 	Source *dagger.Directory
 
@@ -26,16 +25,27 @@ type Runme struct {
 }
 
 func New(
+	// GhcrUsername is the GitHub Container Registry username for authentication
 	// +optional
 	ghcrUsername string,
+	// GhcrToken is the GitHub Container Registry token for authentication
 	// +optional
 	ghcrToken *dagger.Secret,
 
+	// TargetPlatform specifies the target platform (os/arch combination) for the build
 	// +optional
 	targetPlatform string,
 ) *Runme {
 	targetOS := "linux"
 	targetArch := "amd64"
+
+	if p, err := dag.DefaultPlatform(context.Background()); err == nil {
+		parts := strings.Split(string(p), "/")
+		if len(parts) == 2 {
+			// keep Linux as OS, but set Arch
+			targetArch = parts[1]
+		}
+	}
 
 	if targetPlatform != "" {
 		parts := strings.Split(targetPlatform, "/")
@@ -49,12 +59,14 @@ func New(
 		GhcrUsername: ghcrUsername,
 		GhcrToken:    ghcrToken,
 
-		// build env container only available for linux/amd64
-		ContainerPlatform: dagger.Platform("linux/amd64"),
-
 		TargetOS:   targetOS,
 		TargetArch: targetArch,
 	}
+}
+
+// TargetPlatform returns the target platform in the format "OS/ARCH".
+func (m *Runme) TargetPlatform(ctx context.Context) string {
+	return fmt.Sprintf("%s/%s", m.TargetOS, m.TargetArch)
 }
 
 // WithSource sets the source directory for the Runme module and returns the module
@@ -66,7 +78,9 @@ func (m *Runme) WithSource(source *dagger.Directory) *Runme {
 
 // Container creates a container with Runme source and registry auth.
 func (m *Runme) Container(ctx context.Context) *dagger.Container {
-	ctr := dag.Container(dagger.ContainerOpts{Platform: m.ContainerPlatform}).
+	// archs have to match for app-level unit tests to pass
+	containerPlatform := dagger.Platform(fmt.Sprintf("linux/%s", m.TargetArch))
+	ctr := dag.Container(dagger.ContainerOpts{Platform: containerPlatform}).
 		From("ghcr.io/runmedev/runme-build-env:latest").
 		WithWorkdir("/workspace")
 
@@ -80,18 +94,19 @@ func (m *Runme) Container(ctx context.Context) *dagger.Container {
 		main := dag.Git("https://github.com/runmedev/runme").Branch("main").Tree()
 		ctr = ctr.WithMountedDirectory("/workspace", main).
 			// retagging to make version tests work
-			WithExec([]string{"git", "tag", "-f", "v99.9.9"}).
+			WithExec([]string{"git", "tag", "-f", "v3.999.999"}).
 			WithExec([]string{"git", "tag", "-d", "main"})
 	}
 
-	return ctr.
-		WithEnvVariable("GOOS", m.TargetOS).
-		WithEnvVariable("GOARCH", m.TargetArch)
+	return ctr
 }
 
-// Build compiles the Runme binary and returns the container with the built binary.
+// Build compiles the Runme binary for the target OS and architecture
+// specified in the module and returns the container with the built binary.
 func (m *Runme) Build(ctx context.Context) *dagger.Container {
 	return m.Container(ctx).
+		WithEnvVariable("GOOS", m.TargetOS).
+		WithEnvVariable("GOARCH", m.TargetArch).
 		WithExec([]string{"make", "build"})
 }
 
@@ -102,10 +117,15 @@ func (m *Runme) Binary(ctx context.Context) *dagger.File {
 }
 
 // Test runs the test suite for Runme and returns the container with test results.
-func (m *Runme) Test(ctx context.Context) *dagger.Container {
+func (m *Runme) Test(
+	ctx context.Context,
+	// pkgs is an optional golang package name to narrow down the test suite
+	// +default="./..."
+	pkgs string,
+) *dagger.Container {
 	return m.Container(ctx).
+		WithEnvVariable("GOARCH", m.TargetArch).
 		WithEnvVariable("RUNME_TEST_ENV", "docker").
-		// short-cut tests for development
-		// WithEnvVariable("PKGS", "github.com/runmedev/runme/v3/pkg/document/editor").
+		WithEnvVariable("PKGS", pkgs).
 		WithExec([]string{"make", "test"})
 }

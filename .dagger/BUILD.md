@@ -8,15 +8,20 @@ terminalRows: 20
 
 Initialize the Runme dagger module. Make sure `direnv` is setup.
 
-```sh {"name":"LinuxBuildEnv"}
-### Exported in runme.dev as LinuxBuildEnv
-. --target-platform "linux/amd64"
+```sh {"interpreter":"bash","terminalRows":"4"}
+direnv allow
+echo "Target platform: $TARGET_PLATFORM"
+```
+
+```sh {"name":"BuildEnv"}
+### Exported in runme.dev as BuildEnv
+. --target-platform $TARGET_PLATFORM
 ```
 
 Check out what the module has to offer.
 
 ```sh
-$LinuxBuildEnv | .help
+$BuildEnv | .help
 ```
 
 ## Local builds
@@ -24,7 +29,7 @@ $LinuxBuildEnv | .help
 Create a build from the local source directory.
 
 ```sh
-$LinuxBuildEnv |
+$BuildEnv |
     with-source . |
     build
 ```
@@ -32,7 +37,7 @@ $LinuxBuildEnv |
 Run the tests.
 
 ```sh
-$LinuxBuildEnv |
+$BuildEnv |
     with-source . |
     test |
     stdout
@@ -43,25 +48,22 @@ $LinuxBuildEnv |
 Testing latest `main` branch.
 
 ```sh
-$LinuxBuildEnv |
+$BuildEnv |
+    # test --pkgs "github.com/runmedev/runme/v3/pkg/document/editor/editorservice" |
     test |
     stdout
 ```
 
 Build the binary.
 
-```sh {"interpreter":"bash","terminalRows":"4"}
-echo "Target platform: $TARGET_PLATFORM"
-```
-
 ```sh {"name":"BuildBinary"}
 ### Exported in runme.dev as BuildBinary
-. --target-platform $TARGET_PLATFORM |
+$BuildEnv |
     binary
 ```
 
 Export it to local file.
 
 ```sh
-$BuildBinary | export runme-build-binary
+$BuildBinary | export /tmp/runme-binary
 ```
