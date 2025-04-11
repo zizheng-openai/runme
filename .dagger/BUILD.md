@@ -28,7 +28,7 @@ Runme | .help
 
 ## Local builds
 
-Create a build from the local source directory.
+Create a build from the local source directory. If `with-source` is skipped, the build will default to https://github.com/runmedev/runme#main.
 
 ```sh
 Runme |
@@ -47,7 +47,7 @@ Runme |
 
 ## Remote builds
 
-Testing latest `main` branch.
+Testing latest `main` branch. Defaults to https://github.com/runmedev/runme#main without `with-source`.
 
 ```sh
 Runme |
