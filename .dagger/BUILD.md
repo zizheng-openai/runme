@@ -15,15 +15,15 @@ echo "Target platform: $TARGET_PLATFORM"
 
 If `TARGET_PLATFORM` is not set, reset your Runme session. It's likely because direnv wasn't authorized yet.
 
-```sh {"name":"BuildEnv"}
-### Exported in runme.dev as BuildEnv
+```sh {"name":"Runme"}
+### Exported in runme.dev as Runme
 . --target-platform $TARGET_PLATFORM
 ```
 
 Check out what the module has to offer.
 
 ```sh
-BuildEnv | .help
+Runme | .help
 ```
 
 ## Local builds
@@ -31,7 +31,7 @@ BuildEnv | .help
 Create a build from the local source directory.
 
 ```sh
-BuildEnv |
+Runme |
     with-source . |
     build
 ```
@@ -39,7 +39,7 @@ BuildEnv |
 Run the tests.
 
 ```sh
-BuildEnv |
+Runme |
     with-source . |
     test |
     stdout
@@ -50,7 +50,7 @@ BuildEnv |
 Testing latest `main` branch.
 
 ```sh
-BuildEnv |
+Runme |
     # test --pkgs "github.com/runmedev/runme/v3/pkg/document/editor/editorservice" |
     test |
     stdout
@@ -60,7 +60,7 @@ Build the binary.
 
 ```sh {"name":"BuildBinary"}
 ### Exported in runme.dev as BuildBinary
-BuildEnv |
+Runme |
     binary
 ```
 
@@ -72,10 +72,14 @@ BuildBinary | export /tmp/runme-binary
 
 ## Releases
 
-```sh
-. | release | entries
-```
+Access official pre-built releases (via goreleaser) stored in GitHub Releases.
 
 ```sh
-. | release-files linux/arm64 | entries
+. | release --version latest | entries
+```
+
+Access the files for a specific release on a particular platform.
+
+```sh
+. | release-files --version latest linux/arm64 | entries
 ```
