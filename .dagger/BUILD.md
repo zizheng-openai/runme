@@ -68,8 +68,9 @@ Runme |
 
 Export it to local file.
 
-```sh
-BuildBinary | export /tmp/runme-binary
+```sh {"name":"LocalBinary"}
+### Exported in runme.dev as LocalBinary
+BuildBinary | export runme
 ```
 
 ## Releases
