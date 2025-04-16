@@ -15,7 +15,8 @@ RUN apt-get update && apt-get install -y \
     "make" \
     "python3" \
     "ruby-full" \
-    "unzip"
+    "unzip" \
+    "xvfb"
 
 # Install babashka
 RUN curl -sLO https://raw.githubusercontent.com/babashka/babashka/master/install && \
