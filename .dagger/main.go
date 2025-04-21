@@ -12,13 +12,13 @@ import (
 
 // A Dagger module for Runme
 type Runme struct {
+	// Source is the source directory for building Runme
+	Source *dagger.Directory
+
 	// GhcrUsername is the GitHub Container Registry username for authentication
 	GhcrUsername string
 	// GhcrToken is the GitHub Container Registry token for authentication
 	GhcrToken *dagger.Secret
-
-	// Source is the local source directory for building Runme
-	Source *dagger.Directory
 
 	// TargetOS specifies the target operating system for the build
 	TargetOS string
@@ -27,6 +27,9 @@ type Runme struct {
 }
 
 func New(
+	// Source is a directory containing the Runme source code
+	// +optional
+	source *dagger.Directory,
 	// GhcrUsername is the GitHub Container Registry username for authentication
 	// +optional
 	ghcrUsername string,
@@ -58,6 +61,8 @@ func New(
 	}
 
 	return &Runme{
+		Source: source,
+
 		GhcrUsername: ghcrUsername,
 		GhcrToken:    ghcrToken,
 
@@ -69,13 +74,6 @@ func New(
 // TargetPlatform returns the target platform in the format "OS/ARCH".
 func (m *Runme) TargetPlatform(ctx context.Context) string {
 	return fmt.Sprintf("%s/%s", m.TargetOS, m.TargetArch)
-}
-
-// WithSource sets the source directory for the Runme module and returns the module
-// for method chaining.
-func (m *Runme) WithSource(source *dagger.Directory) *Runme {
-	m.Source = source
-	return m
 }
 
 // Container creates a container with Runme source and registry auth.
@@ -132,8 +130,8 @@ func (m *Runme) Test(
 		WithExec([]string{"make", "test"})
 }
 
-// Release fetches a Runme release from GitHub and returns a directory with the release assets.
-func (m *Runme) Release(ctx context.Context,
+// ListRelease fetches a Runme release from GitHub and returns a directory with the release assets.
+func (m *Runme) ListRelease(ctx context.Context,
 	// GithubToken is an optional authentication token for GitHub API access
 	// +optional
 	githubToken *dagger.Secret,
@@ -177,8 +175,8 @@ func (m *Runme) Release(ctx context.Context,
 	return ctr.Directory(releaseDir)
 }
 
-// ReleaseFiles fetches a Runme release from GitHub and returns a directory with the uncompressed release files.
-func (m *Runme) ReleaseFiles(ctx context.Context,
+// LinkRelease fetches a Runme release from GitHub and returns a directory with the uncompressed release files.
+func (m *Runme) LinkRelease(ctx context.Context,
 	// Platform specifies the target OS and architecture in the format "os/arch"
 	// e.g. "linux/amd64"
 	platform dagger.Platform,
@@ -207,7 +205,7 @@ func (m *Runme) ReleaseFiles(ctx context.Context,
 	}
 
 	filename := fmt.Sprintf("runme_%s_%s.tar.gz", os, archName)
-	release := m.Release(ctx, githubToken, version)
+	release := m.ListRelease(ctx, githubToken, version)
 
 	ctr := m.Container(ctx).
 		WithFile("/tmp/release/runme.tar.gz", release.File(filename)).

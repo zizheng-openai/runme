@@ -30,26 +30,27 @@ Runme | .help
 
 ## Local builds
 
-Create a build from the local source directory. If `with-source` is skipped, the build will default to https://github.com/runmedev/runme#main.
+Create a build from the local source directory. If `--source` is skipped, the build will default to https://github.com/runmedev/runme#main.
 
 ```sh
-Runme |
-    with-source . |
-    build
+. --source . --target-platform $TARGET_PLATFORM | build
+```
+
+`Runme` uses sources from the `main` branch as per it's definition at the top.
+
+```sh
+Runme | binary
 ```
 
 Run the tests.
 
 ```sh
-Runme |
-    with-source . |
-    test |
-    stdout
+Runme | test | stdout
 ```
 
 ## Remote builds
 
-Testing latest `main` branch. Defaults to https://github.com/runmedev/runme#main without `with-source`.
+Testing latest `main` branch. Defaults to https://github.com/runmedev/runme#main without explicit `source`.
 
 ```sh
 Runme |
@@ -62,8 +63,7 @@ Build the binary.
 
 ```sh {"name":"BuildBinary"}
 ### Exported in runme.dev as BuildBinary
-Runme |
-    binary
+Runme | binary
 ```
 
 Export it to local file.
@@ -78,11 +78,11 @@ BuildBinary | export runme
 Access official pre-built releases (via goreleaser) stored in GitHub Releases.
 
 ```sh
-. | release --version latest | entries
+. | list-release --version latest | entries
 ```
 
 Access the files for a specific release on a particular platform.
 
 ```sh
-. | release-files --version latest linux/arm64 | entries
+. | link-release --version latest linux/arm64 | entries
 ```
