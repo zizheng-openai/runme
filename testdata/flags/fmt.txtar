@@ -12,7 +12,7 @@ cmp LCID-all.md LCID-none.md
 ---
 runme:
   id: 01HMEC2Y9ZGB0EFGE6TT201V0N
-  version: v2.0
+  version: v2
 ---
 
 ## Fenced codeblock without language
@@ -30,7 +30,7 @@ echo 2
 ---
 runme:
   id: 01HMEC2Y9ZGB0EFGE6TT201V0N
-  version: v2.2
+  version: v2
 ---
 
 ## Fenced codeblock without language

@@ -1,0 +1,18 @@
+exec runme print say-hello
+stdout 'echo "Hello world"\n'
+! stderr .
+
+exec runme print -n say-hello
+stdout 'echo "Hello world"'
+! stderr .
+
+exec runme print --raw say-hello
+stdout '```{"name":"say-hello"}\necho "Hello world"\n```'
+! stderr .
+
+-- README.md --
+## Fenced codeblock without language
+
+``` {"name":"say-hello"}
+echo "Hello world"
+```
