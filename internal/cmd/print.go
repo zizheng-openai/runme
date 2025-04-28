@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"bytes"
 	"io"
 	"strings"
 
@@ -13,6 +12,7 @@ import (
 
 func printCmd() *cobra.Command {
 	fRaw := false
+	fNoNewLine := false
 
 	cmd := cobra.Command{
 		Use:               "print",
@@ -43,7 +43,11 @@ func printCmd() *cobra.Command {
 			value := []byte(strings.Join(lines, "\n"))
 
 			if fRaw {
-				value = bytes.Join([][]byte{task.CodeBlock.Value(), []byte("\n")}, nil)
+				value = task.CodeBlock.Value()
+			}
+
+			if !fNoNewLine {
+				value = append(value, '\n')
 			}
 
 			w := bulkWriter{
@@ -55,7 +59,8 @@ func printCmd() *cobra.Command {
 	}
 
 	setDefaultFlags(&cmd)
-	cmd.Flags().BoolVar(&fRaw, "raw", false, "Print the raw command without transforming it.")
+	cmd.Flags().BoolVarP(&fRaw, "raw", "r", false, "Print the raw command without transforming it.")
+	cmd.Flags().BoolVarP(&fNoNewLine, "skip-newline", "n", false, "Do not print newline after the command.")
 
 	return &cmd
 }
