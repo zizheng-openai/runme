@@ -10,6 +10,14 @@ cmp stdout golden-list-json.txt
 exec runme run SimpleDagger
 stdout 'sha256:[0-9a-f]{64}'
 
+exec runme print SimpleDagger
+stdout 'SimpleDagger\('
+! stdout '### Exported in runme.dev as SimpleDagger'
+
+exec runme print --raw SimpleDagger
+! stdout 'SimpleDagger\('
+stdout '### Exported in runme.dev as SimpleDagger'
+
 exec runme run WithDagger
 stdout 'sha256:[0-9a-f]{64}'
 
