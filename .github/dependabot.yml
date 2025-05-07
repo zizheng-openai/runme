@@ -1,0 +1,13 @@
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: "/"
+    schedule:
+      interval: weekly
+      time: "06:00"
+      day: "tuesday"
+      timezone: "America/Los_Angeles"
+    open-pull-requests-limit: 10
+    ignore:
+      # latest version won't build using bazel
+      - dependency-name: "github.com/cloudflare/circl"

@@ -58,10 +58,8 @@ test-docker: test-docker/setup test-docker/run
 
 .PHONY: test-docker/setup
 test-docker/setup:
-	docker build \
-		--progress=plain \
-		-t runme-build-env:latest \
-		-f ./docker/runme-build-env.Dockerfile .
+	docker pull \
+		ghcr.io/runmedev/runme-build-env:latest
 	docker volume create dev.runme.test-env-gocache
 
 .PHONY: test-docker/cleanup
@@ -74,7 +72,14 @@ test-docker/run:
 		-e RUNME_TEST_ENV=docker \
 		-v $(shell pwd):/workspace \
 		-v dev.runme.test-env-gocache:/root/.cache/go-build \
-		runme-build-env:latest
+		ghcr.io/runmedev/runme-build-env:latest
+
+.PHONY: build-docker
+build-docker:
+	docker build \
+		--progress=plain \
+		-t runme-build-env:latest \
+		-f ./docker/runme-build-env.Dockerfile .
 
 .PHONY: test/parser
 test/parser:
@@ -140,12 +145,12 @@ proto/_generate:
 
 .PHONY: proto/clean
 proto/clean:
-	rm -rf pkg/api/gen/proto
+	rm -rf api/gen/proto
 
 .PHONY: proto/dev
 proto/dev: build proto/clean proto/generate
 	rm -rf $(RUNME_EXT_BASE)/node_modules/@buf/stateful_runme.community_timostamm-protobuf-ts/runme
-	cp -vrf pkg/api/gen/proto/ts/runme $(RUNME_EXT_BASE)/node_modules/@buf/stateful_runme.community_timostamm-protobuf-ts
+	cp -vrf api/gen/proto/ts/runme $(RUNME_EXT_BASE)/node_modules/@buf/stateful_runme.community_timostamm-protobuf-ts
 
 .PHONY: proto/dev/reset
 proto/dev/reset:
@@ -156,7 +161,7 @@ proto/dev/reset:
 # More: https://docs.buf.build/bsr/authentication
 .PHONY: proto/publish
 proto/publish:
-	@cd ./pkg/api/proto && buf push
+	@cd ./api/proto && buf push
 
 .PHONY: config/schema/generate
 config/schema/generate:
@@ -168,7 +173,7 @@ config/schema/generate:
 
 .PHONY: gql/schema/generate
 gql/schema/generate:
-	@go run ./cmd/gqltool/main.go > ./internal/client/graphql/schema/introspection_query_result.json
+	@go run ./tools/gqltool/main.go > ./internal/client/graphql/schema/introspection_query_result.json
 	@npm install --prefix internal/client/graphql/schema
 	@cd ./internal/client/graphql/schema && npm run convert
 
