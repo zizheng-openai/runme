@@ -1299,7 +1299,12 @@ func startRunnerServiceServer(t *testing.T) (logger *zap.Logger, logFile string,
 	lis := bufconn.Listen(1 << 20) // 1 MB
 	go server.Serve(lis)
 
-	return logger, logFile, lis, server.Stop
+	stop = func() {
+		server.Stop()
+		logger.Sync()
+	}
+
+	return logger, logFile, lis, stop
 }
 
 type executeResult struct {

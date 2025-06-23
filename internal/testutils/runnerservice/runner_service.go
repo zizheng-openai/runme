@@ -28,5 +28,10 @@ func New(t *testing.T) (_ *bufconn.Listener, stop func()) {
 	lis := bufconn.Listen(1 << 20) // 1 MB
 	go server.Serve(lis)
 
-	return lis, server.Stop
+	stop = func() {
+		logger.Sync()
+		server.Stop()
+	}
+
+	return lis, stop
 }
