@@ -25,8 +25,8 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	runnerv1 "github.com/runmedev/runme/v3/api/gen/proto/go/runme/runner/v1"
-	"github.com/runmedev/runme/v3/internal/log"
 	"github.com/runmedev/runme/v3/internal/testutils"
+	"github.com/runmedev/runme/v3/internal/testutils/log"
 	"github.com/runmedev/runme/v3/internal/ulid"
 )
 
