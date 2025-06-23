@@ -29,7 +29,7 @@ func New(t *testing.T) (_ *bufconn.Listener, stop func()) {
 	go server.Serve(lis)
 
 	stop = func() {
-		logger.Sync()
+		_ = logger.Sync()
 		server.Stop()
 	}
 
