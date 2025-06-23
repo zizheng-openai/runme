@@ -338,6 +338,11 @@ input ProgramConfigInput {
 
 	"""
 	knownName: String
+	"""
+	 optional run ID to track the execution of the program
+
+	"""
+	runId: String
 }
 input ProgramConfig_CommandListInput {
 	"""

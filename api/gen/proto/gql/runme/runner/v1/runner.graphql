@@ -166,6 +166,11 @@ input ExecuteRequestInput {
 
 	"""
 	knownName: String
+	"""
+	 optional run ID to track the execution of the program
+
+	"""
+	runId: String
 }
 type ExecuteResponse {
 	"""

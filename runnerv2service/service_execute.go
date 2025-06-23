@@ -16,8 +16,7 @@ import (
 )
 
 func (r *runnerService) Execute(srv runnerv2.RunnerService_ExecuteServer) error {
-	runID := ulid.GenerateID()
-	logger := r.logger.Named("Execute").With(zap.String("id", runID))
+	logger := r.logger.Named("Execute")
 
 	// Get the initial request.
 	req, err := srv.Recv()
@@ -29,7 +28,13 @@ func (r *runnerService) Execute(srv runnerv2.RunnerService_ExecuteServer) error 
 		logger.Info("failed to receive a request", zap.Error(err))
 		return errors.WithStack(err)
 	}
-	logger.Info("received initial request", zap.Any("req", req))
+
+	runID := req.GetConfig().GetRunId()
+	if runID == "" {
+		runID = ulid.GenerateID()
+	}
+	logger = logger.Named("Execute").With(zap.String("id", runID))
+	logger.Debug("received initial request", zap.Any("req", req))
 
 	execInfo := getExecutionInfoFromExecutionRequest(req)
 	execInfo.RunID = runID
