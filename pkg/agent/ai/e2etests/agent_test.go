@@ -32,10 +32,11 @@ func Test_Agent(t *testing.T) {
 	}
 	ghaOwner := os.Getenv("GITHUB_REPOSITORY_OWNER")
 	if ghaOwner == "runmedev" {
-		t.Skip("Skipping agent test in runmedev repository")
+		t.Skip("Skipping agent test in runmedev repositories")
 	}
 
-	app := application.NewApp()
+	// todo(sebastian): we might want to use a different app name for agents/evals
+	app := application.NewApp("runme-agent-test")
 	if err := app.LoadConfig(nil); err != nil {
 		t.Fatal(err)
 	}

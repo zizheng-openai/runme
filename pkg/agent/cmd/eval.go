@@ -18,7 +18,7 @@ import (
 	"github.com/runmedev/runme/v3/pkg/agent/application"
 )
 
-func NewEvalCmd() *cobra.Command {
+func NewEvalCmd(appName string) *cobra.Command {
 	var cookieFile string
 	cmd := cobra.Command{
 		Use:   "eval <yaml-file>",
@@ -28,7 +28,7 @@ func NewEvalCmd() *cobra.Command {
 			if cookieFile == "" {
 				return fmt.Errorf("--cookie-file flag is required")
 			}
-			app := application.NewApp()
+			app := application.NewApp(appName)
 			if err := app.LoadConfig(cmd); err != nil {
 				return err
 			}
@@ -63,7 +63,7 @@ func NewEvalCmd() *cobra.Command {
 			}
 			cookies := make(map[string]string)
 			lines := strings.Split(string(cookieData), "\n")
-			client, err := ai.NewClient(*app.Config.OpenAI)
+			client, err := ai.NewClient(*app.AppConfig.OpenAI)
 			if err != nil {
 				return fmt.Errorf("failed to read OpenAI API key file: %w", err)
 			}

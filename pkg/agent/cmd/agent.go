@@ -10,28 +10,29 @@ import (
 	"github.com/runmedev/runme/v3/pkg/agent/config"
 )
 
-func NewAgentCmd() *cobra.Command {
+func NewAgentCmd(appName string) *cobra.Command {
 	var cfgFile string
 	var level string
 	var jsonLog bool
+
 	agentCmd := &cobra.Command{
 		Use:    "agent",
-		Short:  config.AppName,
+		Short:  appName,
 		Hidden: true,
 	}
 
-	agentCmd.PersistentFlags().StringVar(&cfgFile, config.ConfigFlagName, "", fmt.Sprintf("config file (default is $HOME/.%s/config.yaml)", config.AppName))
+	agentCmd.PersistentFlags().StringVar(&cfgFile, config.ConfigFlagName, "", fmt.Sprintf("config file (default is $HOME/.%s/config.yaml)", appName))
 	agentCmd.PersistentFlags().StringVarP(&level, config.LevelFlagName, "", "info", "The logging level.")
 	agentCmd.PersistentFlags().BoolVarP(&jsonLog, "json-logs", "", false, "Enable json logging.")
 
-	agentCmd.AddCommand(NewVersionCmd(os.Stdout))
-	agentCmd.AddCommand(NewConfigCmd())
-	agentCmd.AddCommand(NewRunCmd())
-	agentCmd.AddCommand(NewServeCmd())
+	agentCmd.AddCommand(NewVersionCmd(appName, os.Stdout))
+	agentCmd.AddCommand(NewConfigCmd(appName))
+	agentCmd.AddCommand(NewRunCmd(appName))
+	agentCmd.AddCommand(NewServeCmd(appName))
 	agentCmd.AddCommand(NewEnvCmd())
-	agentCmd.AddCommand(NewEvalCmd())
+	agentCmd.AddCommand(NewEvalCmd(appName))
 
-	serveCmd := NewServeCmd()
+	serveCmd := NewServeCmd(appName)
 	// Make serveCmd the default command.
 	agentCmd.RunE = serveCmd.RunE
 

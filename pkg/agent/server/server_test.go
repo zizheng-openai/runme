@@ -35,11 +35,13 @@ import (
 	streamv1 "github.com/runmedev/runme/v3/api/gen/proto/go/runme/stream/v1"
 )
 
+const testAppName = "runme-agent"
+
 func Test_HealthCheck(t *testing.T) {
 	// Try sending a healthcheck to the given server.
 	// This is solely for the purpose of trying to reproduce the grpc-trailer issue
 	SkipIfMissing(t, "RUN_MANUAL_TESTS")
-	app := application.NewApp()
+	app := application.NewApp(testAppName)
 	err := app.LoadConfig(nil)
 	if err != nil {
 		t.Fatalf("Error loading config; %v", err)
@@ -58,7 +60,7 @@ func Test_HealthCheck(t *testing.T) {
 func Test_GenerateBlocks(t *testing.T) {
 	SkipIfMissing(t, "RUN_MANUAL_TESTS")
 
-	app := application.NewApp()
+	app := application.NewApp(testAppName)
 	err := app.LoadConfig(nil)
 	if err != nil {
 		t.Fatalf("Error loading config; %v", err)
@@ -234,12 +236,12 @@ func runAIClient(baseURL string) (map[string]*agent.Block, error) {
 func Test_ExecuteWithRunme(t *testing.T) {
 	SkipIfMissing(t, "RUN_MANUAL_TESTS")
 
-	app := application.NewApp()
+	app := application.NewApp(testAppName)
 	err := app.LoadConfig(nil)
 	if err != nil {
 		t.Fatalf("Error loading config; %v", err)
 	}
-	cfg := app.Config
+	cfg := app.AppConfig
 
 	if err := app.SetupLogging(); err != nil {
 		t.Fatalf("Error setting up logging; %v", err)
@@ -259,7 +261,8 @@ func Test_ExecuteWithRunme(t *testing.T) {
 	// N.B. Server currently needs to be started manually. Should we start it autommatically?
 	addr := fmt.Sprintf("http://localhost:%v", cfg.AssistantServer.Port)
 	go func() {
-		if err := setupAndRunServer(*cfg); err != nil {
+		c := app.GetConfig()
+		if err := setupAndRunServer(*c); err != nil {
 			log.Error(err, "Error running server")
 		}
 	}()
@@ -283,12 +286,12 @@ func Test_ExecuteWithRunmeConcurrent(t *testing.T) {
 	// to the websocket on the backend because that causes a panic
 	SkipIfMissing(t, "RUN_MANUAL_TESTS")
 
-	app := application.NewApp()
+	app := application.NewApp(testAppName)
 	err := app.LoadConfig(nil)
 	if err != nil {
 		t.Fatalf("Error loading config; %v", err)
 	}
-	cfg := app.Config
+	cfg := app.AppConfig
 
 	if err := app.SetupLogging(); err != nil {
 		t.Fatalf("Error setting up logging; %v", err)
@@ -308,7 +311,8 @@ func Test_ExecuteWithRunmeConcurrent(t *testing.T) {
 	// N.B. Server currently needs to be started manually. Should we start it autommatically?
 	addr := fmt.Sprintf("http://localhost:%v", cfg.AssistantServer.Port)
 	go func() {
-		if err := setupAndRunServer(*cfg); err != nil {
+		c := app.GetConfig()
+		if err := setupAndRunServer(*c); err != nil {
 			log.Error(err, "Error running server")
 		}
 	}()

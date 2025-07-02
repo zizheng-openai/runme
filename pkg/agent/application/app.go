@@ -26,14 +26,17 @@ import (
 )
 
 type App struct {
-	Config         *config.Config
+	AppName        string
+	AppConfig      *config.AppConfig
 	otelShutdownFn func()
 	logClosers     []logCloser
 }
 
 // NewApp creates a new application. You should call one more setup/Load functions to properly set it up.
-func NewApp() *App {
-	return &App{}
+func NewApp(appName string) *App {
+	return &App{
+		AppName: appName,
+	}
 }
 
 // LoadConfig loads the config. It takes an optional command. The command allows values to be overwritten from
@@ -41,21 +44,22 @@ func NewApp() *App {
 func (a *App) LoadConfig(cmd *cobra.Command) error {
 	// N.B. at this point we haven't configured any logging so zap just returns the default logger.
 	// TODO(jeremy): Should we just initialize the logger without cfg and then reinitialize it after we've read the config?
-	if err := config.InitViper(cmd); err != nil {
+	ac, err := config.NewAppConfig(a.AppName, config.WithViper(cmd))
+	if err != nil {
 		return err
 	}
-	cfg := config.GetConfig()
+	cfg := ac.GetConfig()
 	if problems := cfg.IsValid(); len(problems) > 0 {
 		_, _ = fmt.Fprintf(os.Stdout, "Invalid configuration; %s\n", strings.Join(problems, "\n"))
 		return fmt.Errorf("invalid configuration; fix the problems and then try again")
 	}
-	a.Config = cfg
+	a.AppConfig = ac
 
 	return nil
 }
 
 func (a *App) GetConfig() *config.Config {
-	return a.Config
+	return a.AppConfig.GetConfig()
 }
 
 func (a *App) SetupLogging() error {
@@ -71,7 +75,7 @@ func (a *App) SetupServerLogging() error {
 // SetupOTEL sets up OpenTelemetry. Call this function if you want to enable OpenTelemetry.
 func (a *App) SetupOTEL() error {
 	log := zapr.NewLogger(zap.L())
-	if a.Config == nil {
+	if a.AppConfig == nil {
 		return errors.New("config shouldn't be nil; did you forget to call LoadConfig?")
 	}
 
@@ -84,8 +88,8 @@ func (a *App) SetupOTEL() error {
 	)))
 
 	// Only set up OTLP HTTP exporter if endpoint is configured.
-	if a.Config != nil && a.Config.Telemetry != nil && a.Config.Telemetry.OtlpHTTPEndpoint != "" {
-		endpoint := a.Config.Telemetry.OtlpHTTPEndpoint
+	if a.AppConfig != nil && a.AppConfig.Telemetry != nil && a.AppConfig.Telemetry.OtlpHTTPEndpoint != "" {
+		endpoint := a.AppConfig.Telemetry.OtlpHTTPEndpoint
 		log.Info("Setting up OTLP HTTP exporter", "endpoint", endpoint)
 		exp, err := otlptracehttp.New(context.Background(), otlptracehttp.WithEndpoint(endpoint), otlptracehttp.WithInsecure())
 		if err != nil {
@@ -116,7 +120,7 @@ func (a *App) SetupOTEL() error {
 }
 
 func (a *App) setupLoggers(logToFile bool) error {
-	if a.Config == nil {
+	if a.AppConfig == nil {
 		return errors.New("Config is nil; call LoadConfig first")
 	}
 
@@ -126,7 +130,7 @@ func (a *App) setupLoggers(logToFile bool) error {
 	jsonPaths := make([]string, 0, 1)
 
 	if logToFile {
-		for _, sink := range a.Config.Logging.Sinks {
+		for _, sink := range a.AppConfig.Logging.Sinks {
 			project, logName, isLog := gcplogs.ParseURI(sink.Path)
 			if isLog {
 				if err := gcplogs.RegisterSink(project, logName, nil); err != nil {
@@ -177,8 +181,8 @@ func (a *App) setupLoggers(logToFile bool) error {
 	newLogger := zap.New(core)
 	// Record the caller of the log message
 	newLogger = newLogger.WithOptions(zap.AddCaller())
-	if a.Config.Metadata.Name != "" {
-		newLogger = newLogger.With(zap.String("agentName", a.Config.Metadata.Name))
+	if a.AppConfig.Metadata.Name != "" {
+		newLogger = newLogger.With(zap.String("agentName", a.AppConfig.Metadata.Name))
 	}
 	zap.ReplaceGlobals(newLogger)
 	return nil
@@ -190,7 +194,7 @@ func (a *App) createCoreForConsole(paths []string) (zapcore.Core, error) {
 
 	// Use the keys used by cloud logging
 	// https://cloud.google.com/logging/docs/structured-logging
-	logFields := a.Config.Logging.LogFields
+	logFields := a.AppConfig.Logging.LogFields
 	if logFields == nil {
 		logFields = &config.LogFields{}
 	}
@@ -212,7 +216,7 @@ func (a *App) createCoreForConsole(paths []string) (zapcore.Core, error) {
 		c.MessageKey = "message"
 	}
 
-	lvl := a.Config.GetLogLevel()
+	lvl := a.AppConfig.GetLogLevel()
 	zapLvl := zap.NewAtomicLevel()
 
 	if err := zapLvl.UnmarshalText([]byte(lvl)); err != nil {
@@ -236,7 +240,7 @@ func (a *App) createCoreForConsole(paths []string) (zapcore.Core, error) {
 // getRawLogFile gets the file to write raw logs to. The file is written in JSON format.
 // Ensures the directory exists.
 func (a *App) getRawLogFile() (string, error) {
-	logDir := filepath.Join(a.Config.GetLogDir(), "raw")
+	logDir := filepath.Join(a.AppConfig.GetLogDir(), "raw")
 	if _, err := os.Stat(logDir); os.IsNotExist(err) {
 		// Logger won't be setup yet so we can't use it.
 		_, _ = fmt.Fprintf(os.Stdout, "Creating log directory %s\n", logDir)
@@ -261,7 +265,7 @@ func (a *App) createJSONCoreLogger(paths []string) (zapcore.Core, error) {
 	c := zap.NewProductionEncoderConfig()
 	// Use the keys used by cloud logging
 	// https://cloud.google.com/logging/docs/structured-logging
-	logFields := a.Config.Logging.LogFields
+	logFields := a.AppConfig.Logging.LogFields
 	if logFields == nil {
 		logFields = &config.LogFields{}
 	}
@@ -304,8 +308,8 @@ func (a *App) createJSONCoreLogger(paths []string) (zapcore.Core, error) {
 
 	zapLvl := zap.NewAtomicLevel()
 
-	if err := zapLvl.UnmarshalText([]byte(a.Config.GetLogLevel())); err != nil {
-		return nil, errors.Wrapf(err, "Could not convert level %v to ZapLevel", a.Config.GetLogLevel())
+	if err := zapLvl.UnmarshalText([]byte(a.AppConfig.GetLogLevel())); err != nil {
+		return nil, errors.Wrapf(err, "Could not convert level %v to ZapLevel", a.AppConfig.GetLogLevel())
 	}
 
 	// Force log level to be at least info. Because info is the level at which we capture the logs we need for

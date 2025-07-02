@@ -14,12 +14,12 @@ import (
 )
 
 // NewRunCmd returns a command to run the server
-func NewRunCmd() *cobra.Command {
+func NewRunCmd(appName string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "run",
 		Run: func(cmd *cobra.Command, args []string) {
 			err := func() error {
-				app := application.NewApp()
+				app := application.NewApp(appName)
 				if err := app.LoadConfig(cmd); err != nil {
 					return err
 				}
