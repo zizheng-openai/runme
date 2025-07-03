@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/pkg/errors"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/genproto/googleapis/rpc/code"
@@ -15,6 +16,15 @@ import (
 	"github.com/runmedev/runme/v3/pkg/agent/iam"
 	"github.com/runmedev/runme/v3/pkg/agent/logs"
 	"github.com/runmedev/runme/v3/pkg/agent/runme"
+)
+
+// Stream client grace period (package-level, for testability).
+var ClientGracePeriod = 30 * time.Second
+
+// Multiplexer timeout and interval for inactivity (package-level, for testability).
+var (
+	MultiplexerTimeout  = 20 * time.Minute
+	MultiplexerInterval = 30 * time.Second
 )
 
 // Multiplexer manages websocket connections, runme.Runner Execution bidirectional processing, and request/response multiplexing
@@ -67,7 +77,11 @@ func (m *Multiplexer) acceptConnection(streamID string, sc *Connection) error {
 		return err
 	}
 
+	// Start a goroutine to receive requests for a specific stream.
 	go m.receiveRequests(streamID, sc)
+
+	// Start a goroutine to enforce a timeout with an interval for inactivity per stream.
+	go m.startInactivityTimeout(MultiplexerTimeout, MultiplexerInterval)
 
 	return nil
 }
@@ -97,6 +111,35 @@ func (m *Multiplexer) receiveRequests(streamID string, sc *Connection) {
 	}
 }
 
+// startInactivityTimeout enforces a timeout for inactivity (not actively executing requests) using an interval.
+func (m *Multiplexer) startInactivityTimeout(timeout time.Duration, interval time.Duration) {
+	log := logs.FromContextWithTrace(m.ctx)
+
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+	deadline := time.Now().Add(timeout)
+
+	for {
+		select {
+		case <-m.ctx.Done():
+			// Multiplexer already canceled, exit goroutine.
+			return
+		case <-ticker.C:
+			if p := m.getInflight(); p != nil && p.ActiveRequests {
+				// Processor actively executing requests, exit goroutine.
+				return
+			}
+			if time.Now().After(deadline) {
+				// Timeout reached, processor not executing requests, cancel multiplexer.
+				log.Info("Inactivity timeout reached, canceling multiplexer", "runID", m.runID)
+				m.streams.error(m.ctx, code.Code_DEADLINE_EXCEEDED, errors.New("inactivity timeout"))
+				m.cancel() // will grant 30s grace period for clients to close connection.
+				return
+			}
+		}
+	}
+}
+
 // close shuts down the RunmeMultiplexer. We wait for 30s to give the client a chance to close the connection (preferred).
 func (m *Multiplexer) close() {
 	p := m.getInflight()
@@ -104,8 +147,8 @@ func (m *Multiplexer) close() {
 		p.close()
 	}
 	m.setInflight(nil)
-	// Wait for 30s to give the client a chance to close the connection.
-	time.Sleep(30 * time.Second)
+	// Wait for the client grace period to give the client a chance to close the connection.
+	time.Sleep(ClientGracePeriod)
 	// With Runme's execution finished we can close all websocket connections.
 	m.streams.close(m.ctx)
 }
