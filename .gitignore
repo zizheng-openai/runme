@@ -61,4 +61,4 @@ internal/project/testdata/git-project/**/.gitignore
 # Ignore user-specific runme.yaml files.
 experimental/runme.*.yaml
 
-api/gen/proto/es/package.json
+api/gen/proto/es/package*.json
