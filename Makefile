@@ -143,6 +143,7 @@ proto/_generate:
 	buf lint
 	buf format -w
 	buf generate
+	echo '{"type":"module","name":"@buf/stateful_runme.bufbuild_es"}' > api/gen/proto/es/package.json
 
 .PHONY: proto/clean
 proto/clean:
