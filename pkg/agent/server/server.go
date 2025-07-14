@@ -128,7 +128,7 @@ func NewServer(opts Options, agent *ai.Agent) (*Server, error) {
 }
 
 // Run starts the http server
-// Blocks until its shutdown.
+// Cells until its shutdown.
 func (s *Server) Run() error {
 	s.shutdownComplete = make(chan bool, 1)
 	trapInterrupt(s)
@@ -257,7 +257,7 @@ func (s *Server) registerServices() error {
 	}
 
 	if s.agent != nil {
-		aiSvcPath, aiSvcHandler := agentv1connect.NewBlocksServiceHandler(s.agent, connect.WithInterceptors(interceptors...))
+		aiSvcPath, aiSvcHandler := agentv1connect.NewMessagesServiceHandler(s.agent, connect.WithInterceptors(interceptors...))
 		log.Info("Setting up AI service", "path", aiSvcPath)
 		// Protect the AI service
 		mux.HandleProtected(aiSvcPath, aiSvcHandler, s.checker, api.AgentUserRole)

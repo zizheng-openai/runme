@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-package agent.v1;
+package runme.parser.v1;
 
-option go_package = "github.com/runmedev/runme/v3/api/gen/proto/go/agent/v1;agentv1";
+option go_package = "github.com/runmedev/runme/v3/api/gen/proto/go/runme/parser/v1;parserv1";
 
-message FileSearchResult {
+message DocResult {
   // The unique ID of the file.
   string file_id = 1;
   // The name of the file.
