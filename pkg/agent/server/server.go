@@ -34,6 +34,7 @@ import (
 
 	"github.com/runmedev/runme/v3/pkg/agent/config"
 
+	"github.com/runmedev/runme/v3/api/gen/proto/go/runme/parser/v1/parserv1connect"
 	runnerv2 "github.com/runmedev/runme/v3/api/gen/proto/go/runme/runner/v2"
 
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
@@ -49,6 +50,7 @@ type Server struct {
 	engine           http.Handler
 	shutdownComplete chan bool
 	runner           *runme.Runner
+	parser           *runme.Parser
 	agent            *ai.Agent
 	checker          iam.Checker
 }
@@ -96,6 +98,12 @@ func NewServer(opts Options, agent *ai.Agent) (*Server, error) {
 		log.Info("Runner service is disabled")
 	}
 
+	var parser *runme.Parser
+
+	if opts.Server.ParserService {
+		parser = runme.NewParser(zap.L())
+	}
+
 	if opts.Server.OIDC == nil && opts.IAMPolicy != nil {
 		return nil, errors.New("IAM policy is set but OIDC is not configured")
 	}
@@ -121,6 +129,7 @@ func NewServer(opts Options, agent *ai.Agent) (*Server, error) {
 		serverConfig: opts.Server,
 		webAppConfig: opts.WebApp,
 		runner:       runner,
+		parser:       parser,
 		agent:        agent,
 		checker:      checker,
 	}
@@ -263,6 +272,14 @@ func (s *Server) registerServices() error {
 		mux.HandleProtected(aiSvcPath, aiSvcHandler, s.checker, api.AgentUserRole)
 	} else {
 		log.Info("Agent is nil; AI service is disabled")
+	}
+
+	if s.parser != nil {
+		parserSvcPath, parserSvcHandler := parserv1connect.NewParserServiceHandler(s.parser, connect.WithInterceptors(interceptors...))
+		log.Info("Setting up parser service", "path", parserSvcPath)
+		mux.HandleProtected(parserSvcPath, parserSvcHandler, s.checker, api.AgentUserRole)
+	} else {
+		log.Info("Parser is nil; parser service is disabled")
 	}
 
 	if s.runner != nil {
