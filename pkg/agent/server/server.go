@@ -277,7 +277,7 @@ func (s *Server) registerServices() error {
 	if s.parser != nil {
 		parserSvcPath, parserSvcHandler := parserv1connect.NewParserServiceHandler(s.parser, connect.WithInterceptors(interceptors...))
 		log.Info("Setting up parser service", "path", parserSvcPath)
-		mux.HandleProtected(parserSvcPath, parserSvcHandler, s.checker, api.RunnerUserRole)
+		mux.HandleProtected(parserSvcPath, parserSvcHandler, s.checker, api.ParserUserRole)
 	} else {
 		log.Info("Parser is nil; parser service is disabled")
 	}
