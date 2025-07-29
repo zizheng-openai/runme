@@ -15,6 +15,8 @@ import (
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+
 	agentv1 "github.com/runmedev/runme/v3/api/gen/proto/go/agent/v1"
 	"github.com/runmedev/runme/v3/api/gen/proto/go/agent/v1/agentv1connect"
 
@@ -38,6 +40,7 @@ import (
 	"github.com/runmedev/runme/v3/api/gen/proto/go/runme/runner/v2/runnerv2connect"
 
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel"
 	"go.uber.org/zap"
 )
 
@@ -241,7 +244,10 @@ func (s *Server) registerServices() error {
 	}
 
 	// Create the OTEL interceptor
-	otelInterceptor, err := otelconnect.NewInterceptor()
+	otelInterceptor, err := otelconnect.NewInterceptor(
+		otelconnect.WithTracerProvider(otel.GetTracerProvider()),
+		otelconnect.WithMeterProvider(otel.GetMeterProvider()),
+	)
 	if err != nil {
 		return errors.Wrapf(err, "Failed to create otel interceptor")
 	}
@@ -302,6 +308,7 @@ func (s *Server) registerServices() error {
 	mux.Handle(grpchealth.NewHandler(checker))
 
 	mux.HandleFunc("/trailerstest", trailersTest)
+	mux.Handle("/metrics", promhttp.Handler())
 
 	// The single page app is currently only enabled in the agent not the runner.
 	if s.agent != nil {
