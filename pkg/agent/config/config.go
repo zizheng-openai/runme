@@ -127,6 +127,7 @@ type CloudAssistantConfig struct {
 	VectorStores []string `json:"vectorStores,omitempty" yaml:"vectorStores,omitempty"`
 	AgentCookie  string   `json:"agentCookie,omitempty" yaml:"agentCookie,omitempty"`
 	TargetURL    string   `json:"targetUrl,omitempty" yaml:"targetUrl,omitempty"`
+	Model        string   `json:"model,omitempty" yaml:"model,omitempty"`
 }
 
 type OpenAIConfig struct {
