@@ -6,6 +6,10 @@ const (
 
 	// AgentUserRole is the role for the agent user.
 	AgentUserRole = "role/agent.user"
+
+	// ParserUserRole is the role for the parser user.
+	// Parser service is used for serialization.
+	ParserUserRole = "role/parser.user"
 )
 
 type MemberKind string
