@@ -52,6 +52,7 @@ type Server struct {
 	runner           *runme.Runner
 	parser           *runme.Parser
 	agent            agentv1connect.MessagesServiceHandler
+	agentLogger      agentv1connect.LogServiceHandler
 	checker          iam.Checker
 }
 
@@ -63,7 +64,7 @@ type Options struct {
 }
 
 // NewServer creates a new server
-func NewServer(opts Options, agent agentv1connect.MessagesServiceHandler) (*Server, error) {
+func NewServer(opts Options, agent agentv1connect.MessagesServiceHandler, agentLogger agentv1connect.LogServiceHandler) (*Server, error) {
 	log := zapr.NewLogger(zap.L())
 	if agent == nil {
 		if !opts.Server.RunnerService {
@@ -131,6 +132,7 @@ func NewServer(opts Options, agent agentv1connect.MessagesServiceHandler) (*Serv
 		runner:       runner,
 		parser:       parser,
 		agent:        agent,
+		agentLogger:  agentLogger,
 		checker:      checker,
 	}
 	return s, nil
@@ -272,6 +274,14 @@ func (s *Server) registerServices() error {
 		mux.HandleProtected(aiSvcPath, aiSvcHandler, s.checker, api.AgentUserRole)
 	} else {
 		log.Info("Agent is nil; AI service is disabled")
+	}
+
+	if s.agentLogger != nil {
+		agentLogSvcPath, agentLogSvcHandler := agentv1connect.NewLogServiceHandler(s.agentLogger)
+		log.Info("Setting up agentLog service", "path", agentLogSvcPath)
+		mux.HandleProtected(agentLogSvcPath, agentLogSvcHandler, s.checker, api.AgentUserRole)
+	} else {
+		log.Info("agentLog is nil; agentLog service is disabled")
 	}
 
 	if s.parser != nil {

@@ -66,7 +66,7 @@ func NewServeCmd(appName string) *cobra.Command {
 				IAMPolicy: app.AppConfig.IAMPolicy,
 				WebApp:    app.AppConfig.WebApp,
 			}
-			s, err := server.NewServer(*serverOptions, agent)
+			s, err := server.NewServer(*serverOptions, agent, nil)
 			if err != nil {
 				return err
 			}

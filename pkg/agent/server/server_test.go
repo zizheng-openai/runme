@@ -344,7 +344,7 @@ func setupAndRunServer(cfg config.Config) error {
 		Telemetry: cfg.Telemetry,
 		Server:    cfg.AssistantServer,
 	}
-	srv, err := NewServer(*serverOptions, agent)
+	srv, err := NewServer(*serverOptions, agent, nil)
 	if err != nil {
 		return errors.Wrap(err, "Failed to create server")
 	}
