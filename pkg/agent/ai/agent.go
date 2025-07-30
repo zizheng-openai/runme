@@ -73,6 +73,8 @@ type Agent struct {
 	cellsCache *lru.Cache[string, *parserv1.Cell]
 
 	useOAuth bool // Use OAuth for authorization; if true then the token must be provided in the GenerateRequest
+
+	model string
 }
 
 // AgentOptions are options for creating a new Agent
@@ -90,12 +92,17 @@ type AgentOptions struct {
 	// UseOAuth indicates whether to use OAuth for authentication
 	// If true then the token must be provided in the GenerateRequest
 	UseOAuth bool
+
+	// Model is the model to use for the agent.
+	Model string
 }
 
 // FromAssistantConfig overrides the AgentOptions based on the values from the AssistantConfig
 func (o *AgentOptions) FromAssistantConfig(cfg config.CloudAssistantConfig) error {
 	o.VectorStores = cfg.VectorStores
-
+	if cfg.Model != "" {
+		o.Model = cfg.Model
+	}
 	// TODO(jlewi): We should allow the user to specify the instructions in the config as a path to a file containing
 	// the instructions.
 	return nil
@@ -139,6 +146,7 @@ func NewAgent(opts AgentOptions) (*Agent, error) {
 		responseCache:        responseCache,
 		cellsCache:           cellsCache,
 		useOAuth:             opts.UseOAuth,
+		model:                opts.Model,
 	}, nil
 }
 
@@ -296,7 +304,7 @@ func (a *Agent) ProcessWithOpenAI(ctx context.Context, req *agentv1.GenerateRequ
 	createResponse := responses.ResponseNewParams{
 		Input:             input,
 		Instructions:      openai.Opt(a.instructions),
-		Model:             openai.ChatModelGPT4_1,
+		Model:             openai.ChatModel(a.model),
 		Tools:             tools,
 		ParallelToolCalls: openai.Bool(true),
 		ToolChoice:        toolChoice,
