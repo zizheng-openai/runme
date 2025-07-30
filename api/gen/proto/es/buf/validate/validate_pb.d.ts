@@ -8768,4 +8768,3 @@ export declare const field: GenExtension<FieldOptions, FieldRules>;
  * @generated from extension: optional buf.validate.PredefinedRules predefined = 1160;
  */
 export declare const predefined: GenExtension<FieldOptions, PredefinedRules>;
-
