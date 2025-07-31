@@ -15,6 +15,8 @@ import (
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+
 	agentv1 "github.com/runmedev/runme/v3/api/gen/proto/go/agent/v1"
 	"github.com/runmedev/runme/v3/api/gen/proto/go/agent/v1/agentv1connect"
 
@@ -38,6 +40,7 @@ import (
 	"github.com/runmedev/runme/v3/api/gen/proto/go/runme/runner/v2/runnerv2connect"
 
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel"
 	"go.uber.org/zap"
 )
 
@@ -53,13 +56,18 @@ type Server struct {
 	parser           *runme.Parser
 	agent            agentv1connect.MessagesServiceHandler
 	checker          iam.Checker
+	registerHandlers RegisterHandlers
 }
 
+type RegisterHandlers func(mux *AuthMux, checker iam.Checker, interceptors []connect.Interceptor) error
 type Options struct {
 	Telemetry *config.TelemetryConfig
 	Server    *config.AssistantServerConfig
 	WebApp    *agentv1.WebAppConfig
 	IAMPolicy *api.IAMPolicy
+	// RegisterHandlers is a callback that allows you to register additional handlers in the server.
+	// These could be regular HTTP handlers or proto services.
+	RegisterHandlers RegisterHandlers
 }
 
 // NewServer creates a new server
@@ -125,13 +133,14 @@ func NewServer(opts Options, agent agentv1connect.MessagesServiceHandler) (*Serv
 	}
 
 	s := &Server{
-		telemetry:    opts.Telemetry,
-		serverConfig: opts.Server,
-		webAppConfig: opts.WebApp,
-		runner:       runner,
-		parser:       parser,
-		agent:        agent,
-		checker:      checker,
+		telemetry:        opts.Telemetry,
+		serverConfig:     opts.Server,
+		webAppConfig:     opts.WebApp,
+		runner:           runner,
+		parser:           parser,
+		agent:            agent,
+		checker:          checker,
+		registerHandlers: opts.RegisterHandlers,
 	}
 	return s, nil
 }
@@ -241,7 +250,10 @@ func (s *Server) registerServices() error {
 	}
 
 	// Create the OTEL interceptor
-	otelInterceptor, err := otelconnect.NewInterceptor()
+	otelInterceptor, err := otelconnect.NewInterceptor(
+		otelconnect.WithTracerProvider(otel.GetTracerProvider()),
+		otelconnect.WithMeterProvider(otel.GetMeterProvider()),
+	)
 	if err != nil {
 		return errors.Wrapf(err, "Failed to create otel interceptor")
 	}
@@ -302,6 +314,14 @@ func (s *Server) registerServices() error {
 	mux.Handle(grpchealth.NewHandler(checker))
 
 	mux.HandleFunc("/trailerstest", trailersTest)
+	mux.Handle("/metrics", promhttp.Handler())
+
+	if s.registerHandlers != nil {
+		log.Info("Registering additional handlers")
+		if err := s.registerHandlers(mux, s.checker, interceptors); err != nil {
+			return err
+		}
+	}
 
 	// The single page app is currently only enabled in the agent not the runner.
 	if s.agent != nil {
