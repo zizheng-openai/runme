@@ -137,6 +137,21 @@ export declare const RuleSchema: GenMessage<Rule, {jsonType: RuleJson}>;
  */
 export declare type MessageRules = Message<"buf.validate.MessageRules"> & {
   /**
+   * `disabled` is a boolean flag that, when set to true, nullifies any validation rules for this message.
+   * This includes any fields within the message that would otherwise support validation.
+   *
+   * ```proto
+   * message MyMessage {
+   *   // validation will be bypassed for this message
+   *   option (buf.validate.message).disabled = true;
+   * }
+   * ```
+   *
+   * @generated from field: optional bool disabled = 1;
+   */
+  disabled: boolean;
+
+  /**
    * `cel` is a repeated field of type Rule. Each Rule specifies a validation rule to be applied to this message.
    * These rules are written in Common Expression Language (CEL) syntax. For more information,
    * [see our documentation](https://buf.build/docs/protovalidate/schemas/custom-rules/).
@@ -177,7 +192,7 @@ export declare type MessageRules = Message<"buf.validate.MessageRules"> & {
    *      silently ignored when unmarshalling, with only the last field being set when
    *      unmarshalling completes.
    *
-   * Note that adding a field to a `oneof` will also set the IGNORE_IF_ZERO_VALUE on the fields. This means
+   * Note that adding a field to a `oneof` will also set the IGNORE_IF_UNPOPULATED on the fields. This means
    * only the field that is set will be validated and the unset fields are not validated according to the field rules.
    * This behavior can be overridden by setting `ignore` against a field.
    *
@@ -206,6 +221,21 @@ export declare type MessageRules = Message<"buf.validate.MessageRules"> & {
  * @generated from message buf.validate.MessageRules
  */
 export declare type MessageRulesJson = {
+  /**
+   * `disabled` is a boolean flag that, when set to true, nullifies any validation rules for this message.
+   * This includes any fields within the message that would otherwise support validation.
+   *
+   * ```proto
+   * message MyMessage {
+   *   // validation will be bypassed for this message
+   *   option (buf.validate.message).disabled = true;
+   * }
+   * ```
+   *
+   * @generated from field: optional bool disabled = 1;
+   */
+  disabled?: boolean;
+
   /**
    * `cel` is a repeated field of type Rule. Each Rule specifies a validation rule to be applied to this message.
    * These rules are written in Common Expression Language (CEL) syntax. For more information,
@@ -247,7 +277,7 @@ export declare type MessageRulesJson = {
    *      silently ignored when unmarshalling, with only the last field being set when
    *      unmarshalling completes.
    *
-   * Note that adding a field to a `oneof` will also set the IGNORE_IF_ZERO_VALUE on the fields. This means
+   * Note that adding a field to a `oneof` will also set the IGNORE_IF_UNPOPULATED on the fields. This means
    * only the field that is set will be validated and the unset fields are not validated according to the field rules.
    * This behavior can be overridden by setting `ignore` against a field.
    *
@@ -478,9 +508,10 @@ export declare type FieldRules = Message<"buf.validate.FieldRules"> & {
    *
    * ```proto
    * message UpdateRequest {
-   *   // The uri rule only applies if the field is not an empty string.
-   *   string url = 1 [
-   *     (buf.validate.field).ignore = IGNORE_IF_ZERO_VALUE,
+   *   // The uri rule only applies if the field is populated and not an empty
+   *   // string.
+   *   optional string url = 1 [
+   *     (buf.validate.field).ignore = IGNORE_IF_DEFAULT_VALUE,
    *     (buf.validate.field).string.uri = true
    *   ];
    * }
@@ -717,9 +748,10 @@ export declare type FieldRulesJson = {
    *
    * ```proto
    * message UpdateRequest {
-   *   // The uri rule only applies if the field is not an empty string.
-   *   string url = 1 [
-   *     (buf.validate.field).ignore = IGNORE_IF_ZERO_VALUE,
+   *   // The uri rule only applies if the field is populated and not an empty
+   *   // string.
+   *   optional string url = 1 [
+   *     (buf.validate.field).ignore = IGNORE_IF_DEFAULT_VALUE,
    *     (buf.validate.field).string.uri = true
    *   ];
    * }
@@ -8633,24 +8665,80 @@ export enum Ignore {
   UNSPECIFIED = 0,
 
   /**
-   * Ignore rules if the field is unset, or set to the zero value.
+   * Ignore rules if the field is unset, also for fields that don't track
+   * presence.
    *
-   * The zero value depends on the field type:
-   * - For strings, the zero value is the empty string.
-   * - For bytes, the zero value is empty bytes.
-   * - For bool, the zero value is false.
-   * - For numeric types, the zero value is zero.
-   * - For enums, the zero value is the first defined enum value.
-   * - For repeated fields, the zero is an empty list.
-   * - For map fields, the zero is an empty map.
-   * - For message fields, absence of the message (typically a null-value) is considered zero value.
+   * In proto3, repeated fields, map fields, and fields with scalar types don't
+   * track presence. Consequently, the following fields are only validated if
+   * they are set:
+   *
+   * ```proto
+   * syntax="proto3";
+   *
+   * message RulesApplyIfSet {
+   *   // `string.email` is ignored for the empty string.
+   *   string link = 1 [
+   *     (buf.validate.field).string.email = true,
+   *     (buf.validate.field).ignore = IGNORE_IF_UNPOPULATED
+   *   ];
+   *   // `int32.gte` is ignored for the zero value.
+   *   int32 age = 2 [
+   *     (buf.validate.field).int32.gte = 21,
+   *     (buf.validate.field).ignore = IGNORE_IF_UNPOPULATED
+   *   ];
+   *   // `repeated.min_items` is ignored if the list is empty.
+   *   repeated string labels = 3 [
+   *     (buf.validate.field).repeated.min_items = 3,
+   *     (buf.validate.field).ignore = IGNORE_IF_UNPOPULATED
+   *   ];
+   * }
+   * ```
+   *
+   * For fields that don't track presence, the field's value determines
+   * whether the field is set and rules apply:
+   *
+   * - For string and bytes, an empty value is ignored.
+   * - For bool, false is ignored.
+   * - For numeric types, zero is ignored.
+   * - For enums, the first defined enum value is ignored.
+   * - For repeated fields, an empty list is ignored.
+   * - For map fields, an empty map is ignored.
+   * - For message fields, absence of the message (typically a null-value) is
+   *   ignored.
    *
    * For fields that track presence (e.g. adding the `optional` label in proto3),
-   * this a no-op and behavior is the same as the default `IGNORE_UNSPECIFIED`.
+   * behavior is the same as the default `IGNORE_UNSPECIFIED`.
    *
-   * @generated from enum value: IGNORE_IF_ZERO_VALUE = 1;
+   * To learn which fields track presence, see the
+   * [Field Presence cheat sheet](https://protobuf.dev/programming-guides/field_presence/#cheat).
+   *
+   * @generated from enum value: IGNORE_IF_UNPOPULATED = 1;
    */
-  IF_ZERO_VALUE = 1,
+  IF_UNPOPULATED = 1,
+
+  /**
+   * Ignore rules if the field is unset, or set to the default value.
+   *
+   * The default value depends on the field type:
+   * - For strings, the default value is the empty string.
+   * - For bytes, the default value is empty bytes.
+   * - For bool, the default value is false.
+   * - For numeric types, the default value is zero.
+   * - For enums, the default value is the first defined enum value.
+   * - For repeated fields, the default is an empty list.
+   * - For map fields, the default is an empty map.
+   * - For message fields, Protovalidate treats the empty message as the
+   *   default value. All rules of the referenced message are ignored as well.
+   *
+   * For some fields, the default value can be overridden with the Protobuf
+   * `default` option.
+   *
+   * For fields that don't track presence and don't have the `default` option,
+   * behavior is the same as the default `IGNORE_UNSPECIFIED`.
+   *
+   * @generated from enum value: IGNORE_IF_DEFAULT_VALUE = 2;
+   */
+  IF_DEFAULT_VALUE = 2,
 
   /**
    * Always ignore rules, including the `required` rule.
@@ -8660,7 +8748,7 @@ export enum Ignore {
    *
    * ```proto
    * message MyMessage {
-   *   // The field's rules will always be ignored, including any validations
+   *   // The field's rules will always be ignored, including any validation's
    *   // on value's fields.
    *   MyOtherMessage value = 1 [
    *     (buf.validate.field).ignore = IGNORE_ALWAYS];
@@ -8678,7 +8766,7 @@ export enum Ignore {
  *
  * @generated from enum buf.validate.Ignore
  */
-export declare type IgnoreJson = "IGNORE_UNSPECIFIED" | "IGNORE_IF_ZERO_VALUE" | "IGNORE_ALWAYS";
+export declare type IgnoreJson = "IGNORE_UNSPECIFIED" | "IGNORE_IF_UNPOPULATED" | "IGNORE_IF_DEFAULT_VALUE" | "IGNORE_ALWAYS";
 
 /**
  * Describes the enum buf.validate.Ignore.
