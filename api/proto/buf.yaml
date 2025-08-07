@@ -3,6 +3,7 @@ name: buf.build/stateful/runme
 deps:
   - buf.build/googleapis/googleapis
   - buf.build/bufbuild/protovalidate:v0.13.4
+  - buf.build/protocolbuffers/wellknowntypes
 lint:
   use:
     - STANDARD
