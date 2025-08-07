@@ -59,16 +59,18 @@ type Server struct {
 	registerHandlers RegisterHandlers
 }
 
-type RegisterHandlers func(mux *AuthMux, checker iam.Checker, interceptors []connect.Interceptor) error
-type Options struct {
-	Telemetry *config.TelemetryConfig
-	Server    *config.AssistantServerConfig
-	WebApp    *agentv1.WebAppConfig
-	IAMPolicy *api.IAMPolicy
-	// RegisterHandlers is a callback that allows you to register additional handlers in the server.
-	// These could be regular HTTP handlers or proto services.
-	RegisterHandlers RegisterHandlers
-}
+type (
+	RegisterHandlers func(mux *AuthMux, checker iam.Checker, interceptors []connect.Interceptor) error
+	Options          struct {
+		Telemetry *config.TelemetryConfig
+		Server    *config.AssistantServerConfig
+		WebApp    *agentv1.WebAppConfig
+		IAMPolicy *api.IAMPolicy
+		// RegisterHandlers is a callback that allows you to register additional handlers in the server.
+		// These could be regular HTTP handlers or proto services.
+		RegisterHandlers RegisterHandlers
+	}
+)
 
 // NewServer creates a new server
 func NewServer(opts Options, agent agentv1connect.MessagesServiceHandler) (*Server, error) {
