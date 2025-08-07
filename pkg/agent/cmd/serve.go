@@ -30,7 +30,7 @@ func NewServeCmd(appName string) *cobra.Command {
 			if err := app.SetupOTEL(); err != nil {
 				return err
 			}
-			agentOptions := &ai.AgentOptions{}
+			agentOptions := &ai.AgentOptions{Model: "gpt-4.1"} // set default model to gpt-4.1
 
 			if err := agentOptions.FromAssistantConfig(*app.AppConfig.CloudAssistant); err != nil {
 				return err
